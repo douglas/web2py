@@ -19,29 +19,32 @@ import logging
 
 logger = logging.getLogger("web2py")
 
+
 def md5_hash(text):
     """ Generate a md5 hash with the given text """
     return hashlib.md5(text).hexdigest()
 
-def simple_hash(text, digest_alg = 'md5'):
+
+def simple_hash(text, digest_alg='md5'):
     """
     Generates hash with the given text using the specified
     digest hashing algorithm
     """
     if not digest_alg:
-        raise RuntimeError, "simple_hash with digest_alg=None"
-    elif not isinstance(digest_alg,str):
+        raise RuntimeError("simple_hash with digest_alg=None")
+    elif not isinstance(digest_alg, str):
         h = digest_alg(text)
     else:
         h = hashlib.new(digest_alg)
         h.update(text)
     return h.hexdigest()
 
+
 def get_digest(value):
     """
     Returns a hashlib digest algorithm from a string
     """
-    if not isinstance(value,str):
+    if not isinstance(value, str):
         return value
     value = value.lower()
     if value == "md5":
@@ -59,11 +62,12 @@ def get_digest(value):
     else:
         raise ValueError("Invalid digest algorithm")
 
+
 def hmac_hash(value, key, digest_alg='md5', salt=None):
     if ':' in key:
         digest_alg, key = key.split(':')
     digest_alg = get_digest(digest_alg)
-    d = hmac.new(key,value,digest_alg)
+    d = hmac.new(key, value, digest_alg)
     if salt:
         d.update(str(salt))
     return d.hexdigest()
@@ -85,13 +89,13 @@ def initialize_urandom():
     """
     node_id = uuid.getnode()
     microseconds = int(time.time() * 1e6)
-    ctokens = [((node_id + microseconds) >> ((i%6)*8)) % 256 for i in range(16)]
+    ctokens = [((node_id + microseconds) >> ((i % 6) * 8)) % 256 for i in range(16)]
     random.seed(node_id + microseconds)
     try:
         os.urandom(1)
         try:
             # try to add process-specific entropy
-            frandom = open('/dev/urandom','wb')
+            frandom = open('/dev/urandom', 'wb')
             try:
                 frandom.write(''.join(chr(t) for t in ctokens))
             finally:
@@ -107,6 +111,7 @@ This is not specific to web2py; consider deploying on a different operating syst
     return ctokens
 ctokens = initialize_urandom()
 
+
 def web2py_uuid():
     """
     This function follows from the following discussion:
@@ -117,14 +122,11 @@ def web2py_uuid():
     """
     bytes = [random.randrange(256) for i in range(16)]
     try:
-        ubytes = [ord(c) for c in os.urandom(16)] # use /dev/urandom if possible
+        # use /dev/urandom if possible
+        ubytes = [ord(c) for c in os.urandom(16)]
         bytes = [bytes[i] ^ ubytes[i] for i in range(16)]
     except NotImplementedError:
         pass
     ## xor bytes with constant ctokens
-    bytes = ''.join(chr(c ^ ctokens[i]) for i,c in enumerate(bytes))
+    bytes = ''.join(chr(c ^ ctokens[i]) for i, c in enumerate(bytes))
     return str(uuid.UUID(bytes=bytes, version=4))
-
-
-
-
